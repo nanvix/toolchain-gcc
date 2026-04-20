@@ -95,4 +95,4 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}/tests:/tests" \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            sh -c 'i686-nanvix-gcc -o /tmp/hello /tests/hello.c && file /tmp/hello | grep -q "ELF 32-bit"'
+            sh -c 'i686-nanvix-gcc -o /tmp/hello /tests/hello.c && i686-nanvix-readelf -h /tmp/hello | grep -q ELF'

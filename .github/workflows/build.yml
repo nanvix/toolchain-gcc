@@ -3,6 +3,10 @@
 
 name: "Build and Push"
 
+#==================================================================================================
+# Trigger Conditions
+#==================================================================================================
+
 on:
   push:
     branches: [main]
@@ -10,21 +14,52 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  repository_dispatch:
+    types:
+      - gcc-stage1-release
+
+concurrency:
+  group: build-toolchain-gcc
+  cancel-in-progress: false
+
+#==================================================================================================
+# Environment Variables
+#==================================================================================================
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: nanvix/toolchain-gcc
 
+#==================================================================================================
+# Permissions
+#==================================================================================================
+
 permissions:
-  contents: read
+  contents: write
   packages: write
+
+#==================================================================================================
+# Jobs
+#==================================================================================================
 
 jobs:
   build:
     name: "Build Toolchain Image"
     runs-on: ubuntu-24.04
+
+    outputs:
+      short_sha: ${{ steps.meta_info.outputs.short_sha }}
+      image_tag: ${{ steps.meta_info.outputs.image_tag }}
+
     steps:
       - uses: actions/checkout@v6
+
+      - name: "Get metadata"
+        id: meta_info
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
 
       - name: "Log in to GHCR"
         if: github.event_name != 'pull_request'
@@ -61,7 +96,7 @@ jobs:
       - name: "Make package public"
         if: github.event_name != 'pull_request'
         run: |
-          curl -sS -X PATCH \
+          curl -fsS -X PATCH \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -96,3 +131,65 @@ jobs:
             -v "${{ github.workspace }}/tests:/tests" \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
             sh -c 'i686-nanvix-gcc -o /tmp/hello /tests/hello.c && i686-nanvix-readelf -h /tmp/hello | grep -q ELF'
+
+  release:
+    name: "Create Release"
+    needs: test
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'repository_dispatch'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git configuration
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get release metadata
+        id: release_meta
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          # Use a date-based version for toolchain releases.
+          VERSION=$(date +%Y.%m.%d)
+          TAG_NAME="v${VERSION}-${SHORT_SHA}"
+          RELEASE_NAME="nanvix-toolchain-gcc-${VERSION}-${SHORT_SHA}"
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "release_name=${RELEASE_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Check if release already exists
+        id: check_release
+        run: |
+          if git tag -l "${{ steps.release_meta.outputs.tag_name }}" | grep -q .; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release ${{ steps.release_meta.outputs.tag_name }} already exists, skipping."
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create release tag
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          git tag ${{ steps.release_meta.outputs.tag_name }}
+          git push origin ${{ steps.release_meta.outputs.tag_name }}
+
+      - name: Create GitHub Release
+        if: steps.check_release.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag_name }}
+          name: "${{ steps.release_meta.outputs.release_name }}"
+          body: |
+            Automated release of Nanvix GCC Toolchain
+
+            Built from commit: ${{ github.sha }}
+            Triggered by: ${{ github.event.action }}
+
+            This release contains the complete cross-compilation toolchain (Binutils + GCC + NewLib) for the Nanvix operating system target (i686-nanvix).
+
+            **Docker image:** `ghcr.io/nanvix/toolchain-gcc:latest`
+          draft: false
+          prerelease: false

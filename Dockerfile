@@ -46,7 +46,7 @@ ARG BINUTILS_COMMIT=cce4ffcd98cfd5e715f2b323a6a585907f102a8a
 ARG GCC_COMMIT=9af215ccf6fae9ba273ec45283e0ed3bcabe2429
 ARG NEWLIB_COMMIT=e12d84a6789c07f938db4f6440ea0b427914c735
 
-ENV PREFIX=/opt/nanvix/toolchain-gcc
+ENV PREFIX=/opt/nanvix
 ENV TARGET=i686-nanvix
 ENV PATH="${PREFIX}/bin:${PATH}"
 
@@ -101,9 +101,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         make \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /opt/nanvix/toolchain-gcc /opt/nanvix/toolchain-gcc
+COPY --from=builder /opt/nanvix /opt/nanvix
 
-ENV PATH="/opt/nanvix/toolchain-gcc/bin:${PATH}"
+ENV PATH="/opt/nanvix/bin:${PATH}"
 
 # Smoke test.
 RUN i686-nanvix-gcc --version && \

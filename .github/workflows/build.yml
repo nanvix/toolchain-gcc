@@ -17,9 +17,6 @@ on:
     types:
       - gcc-stage1-release
   workflow_dispatch:
-  repository_dispatch:
-    types:
-      - gcc-stage1-release
 
 concurrency:
   group: build-toolchain-gcc

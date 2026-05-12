@@ -7,10 +7,10 @@
 # Cross-compilation toolchain: Binutils + GCC (2-stage) + Newlib for i686-nanvix.
 #
 # Build:
-#   docker build -t ghcr.io/nanvix/toolchain-gcc:1.0.0 .
+#   docker build -t ghcr.io/nanvix/toolchain-gcc:2.0.0 .
 #
 # Verify:
-#   docker run --rm ghcr.io/nanvix/toolchain-gcc:1.0.0 i686-nanvix-gcc --version
+#   docker run --rm ghcr.io/nanvix/toolchain-gcc:2.0.0 i686-nanvix-gcc --version
 # =============================================================================
 
 FROM ubuntu:24.04 AS builder
@@ -42,8 +42,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Pinned commits for each component.
-ARG BINUTILS_COMMIT=cce4ffcd98cfd5e715f2b323a6a585907f102a8a
-ARG GCC_COMMIT=9af215ccf6fae9ba273ec45283e0ed3bcabe2429
+ARG BINUTILS_COMMIT=07ea3eae4b3fe00d7bd0c2466e256a27fa941aac
+ARG GCC_COMMIT=f250c8b1bf7e3293494da9ddc1be21722ef46591
 ARG NEWLIB_COMMIT=e12d84a6789c07f938db4f6440ea0b427914c735
 
 ENV PREFIX=/opt/nanvix

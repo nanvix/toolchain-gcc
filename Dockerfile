@@ -42,10 +42,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Pinned commits for each component.
-ARG BINUTILS_COMMIT=298f1b3920b68e25eb04a8aaffe8adebd84eda01
-ARG BINUTILS_BRANCH=feat/nanvix-support
-ARG GCC_COMMIT=69b5ce11cd0a9e3c3e5b5eb6e3ae28b87c2e2eb3
-ARG GCC_BRANCH=feat/nanvix-support
+ARG BINUTILS_COMMIT=686c3b0673c89fae3d03ee22a9d9ac9ce29bfa75
+ARG GCC_COMMIT=d6995f34118ad2a5ed2f0408a3a8af44568bf2ee
 ARG NEWLIB_COMMIT=e12d84a6789c07f938db4f6440ea0b427914c735
 ARG NEWLIB_BRANCH=dev
 
@@ -56,12 +54,12 @@ ENV PATH="${PREFIX}/bin:${PATH}"
 WORKDIR /build
 
 # Clone Binutils.
-RUN git clone --branch ${BINUTILS_BRANCH} --single-branch --depth=1 \
-    https://github.com/nanvix/binutils /build/binutils
+RUN git clone https://github.com/nanvix/binutils /build/binutils && \
+    cd /build/binutils && git checkout ${BINUTILS_COMMIT}
 
 # Clone GCC.
-RUN git clone --branch ${GCC_BRANCH} --single-branch --depth=1 \
-    https://github.com/nanvix/gcc /build/gcc
+RUN git clone https://github.com/nanvix/gcc /build/gcc && \
+    cd /build/gcc && git checkout ${GCC_COMMIT}
 
 # Clone Newlib.
 RUN git clone --branch ${NEWLIB_BRANCH} --single-branch --depth=1 \

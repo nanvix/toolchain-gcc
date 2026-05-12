@@ -7,10 +7,10 @@
 # Cross-compilation toolchain: Binutils + GCC (2-stage) + Newlib for i686-nanvix.
 #
 # Build:
-#   docker build -t ghcr.io/nanvix/toolchain-gcc:1.0.0 .
+#   docker build -t ghcr.io/nanvix/toolchain-gcc:2.0.0 .
 #
 # Verify:
-#   docker run --rm ghcr.io/nanvix/toolchain-gcc:1.0.0 i686-nanvix-gcc --version
+#   docker run --rm ghcr.io/nanvix/toolchain-gcc:2.0.0 i686-nanvix-gcc --version
 # =============================================================================
 
 FROM ubuntu:24.04 AS builder
@@ -42,9 +42,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Pinned commits for each component.
-ARG BINUTILS_COMMIT=cce4ffcd98cfd5e715f2b323a6a585907f102a8a
-ARG GCC_COMMIT=9af215ccf6fae9ba273ec45283e0ed3bcabe2429
+ARG BINUTILS_COMMIT=298f1b3920b68e25eb04a8aaffe8adebd84eda01
+ARG BINUTILS_BRANCH=feat/nanvix-support
+ARG GCC_COMMIT=69b5ce11cd0a9e3c3e5b5eb6e3ae28b87c2e2eb3
+ARG GCC_BRANCH=feat/nanvix-support
 ARG NEWLIB_COMMIT=e12d84a6789c07f938db4f6440ea0b427914c735
+ARG NEWLIB_BRANCH=dev
 
 ENV PREFIX=/opt/nanvix
 ENV TARGET=i686-nanvix
@@ -53,16 +56,16 @@ ENV PATH="${PREFIX}/bin:${PATH}"
 WORKDIR /build
 
 # Clone Binutils.
-RUN git clone https://github.com/nanvix/binutils /build/binutils && \
-    cd /build/binutils && git checkout ${BINUTILS_COMMIT}
+RUN git clone --branch ${BINUTILS_BRANCH} --single-branch --depth=1 \
+    https://github.com/nanvix/binutils /build/binutils
 
 # Clone GCC.
-RUN git clone https://github.com/nanvix/gcc /build/gcc && \
-    cd /build/gcc && git checkout ${GCC_COMMIT}
+RUN git clone --branch ${GCC_BRANCH} --single-branch --depth=1 \
+    https://github.com/nanvix/gcc /build/gcc
 
 # Clone Newlib.
-RUN git clone https://github.com/nanvix/newlib /build/newlib && \
-    cd /build/newlib && git checkout ${NEWLIB_COMMIT}
+RUN git clone --branch ${NEWLIB_BRANCH} --single-branch --depth=1 \
+    https://github.com/nanvix/newlib /build/newlib
 
 # Build Binutils.
 RUN cd /build/binutils && \

@@ -15,17 +15,17 @@ This repository builds and publishes a Docker image containing the complete GCC-
 
 ```bash
 # Pull the image.
-docker pull ghcr.io/nanvix/toolchain-gcc:1.0.0
+docker pull ghcr.io/nanvix/toolchain-gcc:2.0.0
 
 # Cross-compile a C program.
-docker run --rm -v $(pwd):/src ghcr.io/nanvix/toolchain-gcc:1.0.0 \
+docker run --rm -v $(pwd):/src ghcr.io/nanvix/toolchain-gcc:2.0.0 \
     i686-nanvix-gcc -o /src/hello /src/hello.c
 ```
 
 ## Building Locally
 
 ```bash
-docker build -t ghcr.io/nanvix/toolchain-gcc:local .
+docker build -t ghcr.io/nanvix/toolchain-gcc:2.0.0 .
 ```
 
 ## Versioning
@@ -34,11 +34,11 @@ This repository follows independent semantic versioning starting at `1.0.0`. Ver
 
 ## Pinned Upstream Commits
 
-| Component | Repository | Commit |
-|-----------|-----------|--------|
-| Binutils | [nanvix/binutils](https://github.com/nanvix/binutils) | `cce4ffc` |
-| GCC | [nanvix/gcc](https://github.com/nanvix/gcc) | `9af215c` |
-| Newlib | [nanvix/newlib](https://github.com/nanvix/newlib) | `e12d84a` |
+| Component | Repository | Branch | Commit |
+|-----------|-----------|--------|--------|
+| Binutils | [nanvix/binutils](https://github.com/nanvix/binutils) | `feat/nanvix-support` | `298f1b3` |
+| GCC | [nanvix/gcc](https://github.com/nanvix/gcc) | `feat/nanvix-support` | `69b5ce1` |
+| Newlib | [nanvix/newlib](https://github.com/nanvix/newlib) | `dev` | `e12d84a` |
 
 ## License
 

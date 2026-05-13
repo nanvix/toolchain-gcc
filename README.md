@@ -36,8 +36,8 @@ This repository follows independent semantic versioning starting at `1.0.0`. Ver
 
 | Component | Repository | Branch | Commit |
 |-----------|-----------|--------|--------|
-| Binutils | [nanvix/binutils](https://github.com/nanvix/binutils) | `feat/nanvix-support` | `298f1b3` |
-| GCC | [nanvix/gcc](https://github.com/nanvix/gcc) | `feat/nanvix-support` | `69b5ce1` |
+| Binutils | [nanvix/binutils](https://github.com/nanvix/binutils) | `dev` | `686c3b0` |
+| GCC | [nanvix/gcc](https://github.com/nanvix/gcc) | `dev` | `d6995f3` |
 | Newlib | [nanvix/newlib](https://github.com/nanvix/newlib) | `dev` | `e12d84a` |
 
 ## License

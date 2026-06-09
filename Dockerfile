@@ -44,7 +44,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Pinned commits for each component.
 ARG BINUTILS_COMMIT=686c3b0673c89fae3d03ee22a9d9ac9ce29bfa75
 ARG GCC_COMMIT=d6995f34118ad2a5ed2f0408a3a8af44568bf2ee
-ARG NEWLIB_COMMIT=e12d84a6789c07f938db4f6440ea0b427914c735
+# Pinned to the merge commit of nanvix/newlib#17 ("[libc] F: Weaken
+# _do_start so libnvx_crt0.a can override it cleanly").  Update this
+# SHA to the upstream merge commit before merging the present PR.
+ARG NEWLIB_COMMIT=881840f880350e6fd929629cef9a5a3d1708bbf4
 ARG NEWLIB_BRANCH=dev
 
 ENV PREFIX=/opt/nanvix
@@ -61,9 +64,14 @@ RUN git clone https://github.com/nanvix/binutils /build/binutils && \
 RUN git clone https://github.com/nanvix/gcc /build/gcc && \
     cd /build/gcc && git checkout ${GCC_COMMIT}
 
-# Clone Newlib.
-RUN git clone --branch ${NEWLIB_BRANCH} --single-branch --depth=1 \
-    https://github.com/nanvix/newlib /build/newlib
+# Clone Newlib and pin to ${NEWLIB_COMMIT} (prior versions of this
+# Dockerfile cloned with --depth=1 only and silently used the tip of
+# ${NEWLIB_BRANCH} regardless of the declared pin, which made the
+# build non-reproducible).  Fetching with sufficient depth and then
+# checking out ${NEWLIB_COMMIT} restores the pin.
+RUN git clone --branch ${NEWLIB_BRANCH} \
+    https://github.com/nanvix/newlib /build/newlib && \
+    cd /build/newlib && git checkout ${NEWLIB_COMMIT}
 
 # Build Binutils.
 RUN cd /build/binutils && \

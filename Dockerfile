@@ -47,6 +47,13 @@ ARG GCC_COMMIT=d6995f34118ad2a5ed2f0408a3a8af44568bf2ee
 ARG NEWLIB_COMMIT=e12d84a6789c07f938db4f6440ea0b427914c735
 ARG NEWLIB_BRANCH=dev
 
+# Nanvix OS release providing libposix.a, user.ld, and nanvixd binaries that the
+# GCC build's `z configure` step expects to be present in the install prefix.
+# Keep these values in sync with the constants in nanvix/gcc's `z` script.
+ARG NANVIX_RELEASE_TAG=v0.13.17
+ARG NANVIX_RELEASE_ASSET=nanvix-x86-microvm-multi-process-release-128mb-0e7fd7c481527808d45df4559b666fe62de487d7.tar.bz2
+ARG NANVIX_RELEASE_SHA256=eeb9686fca184944cdc6f8701796d0988df3f80d9e4dd84d3040238452fd8687
+
 ENV PREFIX=/opt/nanvix
 ENV TARGET=i686-nanvix
 ENV PATH="${PREFIX}/bin:${PATH}"
@@ -70,6 +77,25 @@ RUN cd /build/binutils && \
     ./z configure --install-location="${PREFIX}" --stage=0 --sysroot-location="${PREFIX}" && \
     ./z build && \
     ./z install
+
+# Pre-fetch Nanvix OS artifacts (libposix.a, user.ld, nanvixd binaries) into the
+# install prefix. The GCC `z configure` step downloads these from the public
+# nanvix/nanvix release via `gh`, which is not available inside this build
+# environment; staging them here makes `z` detect them and skip that download.
+RUN set -eux; \
+    url="https://github.com/nanvix/nanvix/releases/download/${NANVIX_RELEASE_TAG}/${NANVIX_RELEASE_ASSET}"; \
+    tmp="$(mktemp -d)"; \
+    curl -fsSL -o "${tmp}/nanvix-os.tar.bz2" "${url}"; \
+    echo "${NANVIX_RELEASE_SHA256}  ${tmp}/nanvix-os.tar.bz2" | sha256sum -c -; \
+    tar -xjf "${tmp}/nanvix-os.tar.bz2" -C "${tmp}"; \
+    mkdir -p "${PREFIX}/lib" "${PREFIX}/libexec/nanvixd"; \
+    install -m 644 "${tmp}/lib/libposix.a" "${PREFIX}/lib/"; \
+    install -m 644 "${tmp}/lib/user.ld" "${PREFIX}/lib/"; \
+    install -m 755 "${tmp}/bin/nanvixd.elf" "${PREFIX}/libexec/nanvixd/"; \
+    install -m 755 "${tmp}/bin/kernel.elf" "${PREFIX}/libexec/nanvixd/"; \
+    install -m 755 "${tmp}/bin/linuxd.elf" "${PREFIX}/libexec/nanvixd/"; \
+    install -m 755 "${tmp}/bin/uservm.elf" "${PREFIX}/libexec/nanvixd/"; \
+    rm -rf "${tmp}"
 
 # Build GCC stage0 (bootstrap compiler, no libc).
 RUN cd /build/gcc && \

@@ -14,9 +14,21 @@ jobs:
   remove:
     runs-on: ubuntu-latest
     steps:
-      - name: Delete toolchain-gcc container package
+      - name: Retire toolchain-gcc container package
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh api --method DELETE
-          /orgs/${{ github.repository_owner }}/packages/container/toolchain-gcc
+        run: |
+          set -euo pipefail
+          if output=$(gh api --method DELETE \
+            /orgs/${{ github.repository_owner }}/packages/container/toolchain-gcc 2>&1); then
+            echo "Legacy package deleted."
+            exit 0
+          fi
+          if ! grep -Fq "more than 5000 downloads" <<< "$output"; then
+            echo "$output" >&2
+            exit 1
+          fi
+          echo "::warning::GitHub prohibits deletion; making the package private"
+          gh api --method PATCH \
+            /orgs/${{ github.repository_owner }}/packages/container/toolchain-gcc \
+            -f visibility=private

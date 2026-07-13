@@ -1,0 +1,22 @@
+# Copyright(c) The Maintainers of Nanvix.
+# Licensed under the MIT License.
+
+name: Remove Legacy Package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete toolchain-gcc container package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh api --method DELETE
+          /orgs/${{ github.repository_owner }}/packages/container/toolchain-gcc

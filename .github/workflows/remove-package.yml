@@ -48,6 +48,7 @@ jobs:
 
           versions=$(gh api --paginate --slurp "$package/versions?per_page=100" \
             | jq '[.[][]]')
+          delete_package=false
           while IFS= read -r version_id; do
             if output=$(gh api --method DELETE "$package/versions/$version_id" 2>&1); then
               continue
@@ -56,9 +57,19 @@ jobs:
               echo "::warning::GitHub retained untagged high-download version $version_id"
               continue
             fi
+            if grep -Fq "last tagged version" <<< "$output"; then
+              delete_package=true
+              continue
+            fi
             echo "$output" >&2
             exit 1
           done < <(jq -r '.[].id' <<< "$versions")
+
+          if [ "$delete_package" = true ]; then
+            gh api --method DELETE "$package"
+            echo "Legacy package deleted."
+            exit 0
+          fi
 
           remaining=$(gh api --paginate --slurp "$package/versions?per_page=100" \
             | jq '[.[][] | .metadata.container.tags[]?] | length')

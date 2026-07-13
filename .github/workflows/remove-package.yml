@@ -66,9 +66,16 @@ jobs:
           done < <(jq -r '.[].id' <<< "$versions")
 
           if [ "$delete_package" = true ]; then
-            gh api --method DELETE "$package"
-            echo "Legacy package deleted."
-            exit 0
+            if output=$(gh api --method DELETE "$package" 2>&1); then
+              echo "Legacy package deleted."
+              exit 0
+            fi
+            if grep -Fq "more than 5000 downloads" <<< "$output"; then
+              echo "::warning::GitHub retained the package, but every public tag is inert"
+              exit 0
+            fi
+            echo "$output" >&2
+            exit 1
           fi
 
           remaining=$(gh api --paginate --slurp "$package/versions?per_page=100" \
